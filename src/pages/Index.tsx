@@ -1,22 +1,23 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin, Clock, DollarSign, Users, Briefcase, Star } from "lucide-react";
+import { Search, MapPin, Clock, DollarSign, Users, Briefcase, Star, LogOut } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
-      toast({
-        title: "Search initiated",
-        description: `Searching for: ${searchQuery}`,
-      });
+      navigate(`/find-jobs?search=${encodeURIComponent(searchQuery)}`);
     } else {
       toast({
         title: "Please enter a search term",
@@ -25,59 +26,11 @@ const Index = () => {
     }
   };
 
-  const handleApplyJob = (jobTitle: string) => {
+  const handleSignOut = async () => {
+    await signOut();
     toast({
-      title: "Application Started",
-      description: `Applying for: ${jobTitle}`,
-    });
-  };
-
-  const handleViewProfile = (freelancerName: string) => {
-    toast({
-      title: "Profile View",
-      description: `Viewing ${freelancerName}'s profile`,
-    });
-  };
-
-  const handleSignIn = () => {
-    toast({
-      title: "Sign In",
-      description: "Redirecting to sign in page...",
-    });
-  };
-
-  const handleGetStarted = () => {
-    toast({
-      title: "Get Started",
-      description: "Welcome to FreelanceHub!",
-    });
-  };
-
-  const handlePostJob = () => {
-    toast({
-      title: "Post a Job",
-      description: "Redirecting to job posting form...",
-    });
-  };
-
-  const handleStartFreelancing = () => {
-    toast({
-      title: "Start Freelancing",
-      description: "Setting up your freelancer profile...",
-    });
-  };
-
-  const handleViewAllJobs = () => {
-    toast({
-      title: "All Jobs",
-      description: "Loading all available jobs...",
-    });
-  };
-
-  const handleBrowseFreelancers = () => {
-    toast({
-      title: "Browse Freelancers",
-      description: "Loading freelancer directory...",
+      title: "Signed out",
+      description: "You have been successfully signed out.",
     });
   };
 
@@ -165,11 +118,37 @@ const Index = () => {
               <span className="text-2xl font-bold text-gray-900">FreelanceHub</span>
             </div>
             <div className="hidden md:flex items-center space-x-6">
-              <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Find Work</a>
-              <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Find Talent</a>
+              <button 
+                onClick={() => navigate('/find-jobs')} 
+                className="text-gray-600 hover:text-blue-600 transition-colors"
+              >
+                Find Work
+              </button>
+              <button 
+                onClick={() => navigate('/post-job')} 
+                className="text-gray-600 hover:text-blue-600 transition-colors"
+              >
+                Find Talent
+              </button>
               <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">How it Works</a>
-              <Button variant="outline" className="ml-4" onClick={handleSignIn}>Sign In</Button>
-              <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleGetStarted}>Get Started</Button>
+              {user ? (
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-gray-600">Welcome, {user.email}</span>
+                  <Button variant="outline" onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <Button variant="outline" className="ml-4" onClick={() => navigate('/auth')}>
+                    Sign In
+                  </Button>
+                  <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => navigate('/auth')}>
+                    Get Started
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -297,7 +276,7 @@ const Index = () => {
                       <span className="text-sm text-gray-500">{job.proposals} proposals</span>
                       <Button 
                         className="bg-blue-600 hover:bg-blue-700"
-                        onClick={() => handleApplyJob(job.title)}
+                        onClick={() => navigate('/find-jobs')}
                       >
                         Apply Now
                       </Button>
@@ -311,7 +290,7 @@ const Index = () => {
                   variant="outline" 
                   size="lg" 
                   className="border-blue-600 text-blue-600 hover:bg-blue-50"
-                  onClick={handleViewAllJobs}
+                  onClick={() => navigate('/find-jobs')}
                 >
                   View All Jobs
                 </Button>
@@ -366,7 +345,10 @@ const Index = () => {
                     <CardFooter>
                       <Button 
                         className="w-full bg-blue-600 hover:bg-blue-700"
-                        onClick={() => handleViewProfile(freelancer.name)}
+                        onClick={() => toast({
+                          title: "Profile View",
+                          description: `Viewing ${freelancer.name}'s profile`,
+                        })}
                       >
                         View Profile
                       </Button>
@@ -380,7 +362,10 @@ const Index = () => {
                   variant="outline" 
                   size="lg" 
                   className="border-blue-600 text-blue-600 hover:bg-blue-50"
-                  onClick={handleBrowseFreelancers}
+                  onClick={() => toast({
+                    title: "Browse Freelancers",
+                    description: "Loading freelancer directory...",
+                  })}
                 >
                   Browse All Freelancers
                 </Button>
@@ -403,7 +388,7 @@ const Index = () => {
             <Button 
               size="lg" 
               className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 text-lg"
-              onClick={handlePostJob}
+              onClick={() => navigate('/post-job')}
             >
               Post a Job
             </Button>
@@ -411,7 +396,7 @@ const Index = () => {
               size="lg" 
               variant="outline" 
               className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 text-lg"
-              onClick={handleStartFreelancing}
+              onClick={() => navigate('/find-jobs')}
             >
               Start Freelancing
             </Button>

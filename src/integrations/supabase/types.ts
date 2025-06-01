@@ -9,7 +9,155 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      jobs: {
+        Row: {
+          budget_max: number | null
+          budget_min: number | null
+          client_id: string
+          created_at: string | null
+          description: string
+          duration: string | null
+          id: string
+          location: string | null
+          proposals_count: number | null
+          skills_required: string[] | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          budget_max?: number | null
+          budget_min?: number | null
+          client_id: string
+          created_at?: string | null
+          description: string
+          duration?: string | null
+          id?: string
+          location?: string | null
+          proposals_count?: number | null
+          skills_required?: string[] | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          budget_max?: number | null
+          budget_min?: number | null
+          client_id?: string
+          created_at?: string | null
+          description?: string
+          duration?: string | null
+          id?: string
+          location?: string | null
+          proposals_count?: number | null
+          skills_required?: string[] | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          full_name: string | null
+          hourly_rate: number | null
+          id: string
+          is_client: boolean | null
+          is_freelancer: boolean | null
+          location: string | null
+          skills: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          hourly_rate?: number | null
+          id: string
+          is_client?: boolean | null
+          is_freelancer?: boolean | null
+          location?: string | null
+          skills?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          hourly_rate?: number | null
+          id?: string
+          is_client?: boolean | null
+          is_freelancer?: boolean | null
+          location?: string | null
+          skills?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      proposals: {
+        Row: {
+          cover_letter: string | null
+          created_at: string | null
+          estimated_duration: string | null
+          freelancer_id: string
+          id: string
+          job_id: string
+          proposed_rate: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cover_letter?: string | null
+          created_at?: string | null
+          estimated_duration?: string | null
+          freelancer_id: string
+          id?: string
+          job_id: string
+          proposed_rate?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cover_letter?: string | null
+          created_at?: string | null
+          estimated_duration?: string | null
+          freelancer_id?: string
+          id?: string
+          job_id?: string
+          proposed_rate?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposals_freelancer_id_fkey"
+            columns: ["freelancer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
