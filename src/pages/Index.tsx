@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,12 +9,84 @@ import { Search, MapPin, Clock, DollarSign, Users, Briefcase, Star, LogOut } fro
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+
+interface Job {
+  id: string;
+  title: string;
+  description: string;
+  budget_min: number | null;
+  budget_max: number | null;
+  duration: string | null;
+  skills_required: string[] | null;
+  location: string | null;
+  created_at: string;
+  proposals_count: number | null;
+  profiles: {
+    full_name: string | null;
+  } | null;
+}
+
+interface FreelancerProfile {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  skills: string[] | null;
+  hourly_rate: number | null;
+  location: string | null;
+}
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+
+  // Fetch featured jobs from database
+  const { data: featuredJobs = [] } = useQuery({
+    queryKey: ['featured-jobs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(`
+          *,
+          profiles!jobs_client_id_fkey (
+            full_name
+          )
+        `)
+        .eq('status', 'open')
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (error) {
+        console.error('Error fetching jobs:', error);
+        return [];
+      }
+      return data as Job[];
+    },
+  });
+
+  // Fetch top freelancers from database
+  const { data: topFreelancers = [] } = useQuery({
+    queryKey: ['top-freelancers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('is_freelancer', true)
+        .not('hourly_rate', 'is', null)
+        .order('hourly_rate', { ascending: false })
+        .limit(6);
+
+      if (error) {
+        console.error('Error fetching freelancers:', error);
+        return [];
+      }
+      return data as FreelancerProfile[];
+    },
+  });
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -34,78 +107,29 @@ const Index = () => {
     });
   };
 
-  // Mock data for demonstration
-  const featuredJobs = [
-    {
-      id: 1,
-      title: "Full-Stack Web Developer",
-      description: "Looking for an experienced developer to build a modern e-commerce platform using React and Node.js.",
-      budget: "$3,000 - $5,000",
-      duration: "2-3 months",
-      skills: ["React", "Node.js", "MongoDB", "Express"],
-      client: "TechStart Inc.",
-      location: "Remote",
-      posted: "2 hours ago",
-      proposals: 12
-    },
-    {
-      id: 2,
-      title: "Mobile App UI/UX Design",
-      description: "Need a talented designer to create intuitive user interfaces for our fitness tracking mobile app.",
-      budget: "$1,500 - $2,500",
-      duration: "3-4 weeks",
-      skills: ["Figma", "UI/UX", "Mobile Design", "Prototyping"],
-      client: "FitLife Co.",
-      location: "Remote",
-      posted: "5 hours ago",
-      proposals: 8
-    },
-    {
-      id: 3,
-      title: "Content Writer for Tech Blog",
-      description: "Seeking a skilled content writer to produce weekly articles about emerging technologies and trends.",
-      budget: "$500 - $800",
-      duration: "Ongoing",
-      skills: ["Content Writing", "SEO", "Tech Writing", "Research"],
-      client: "Digital Insights",
-      location: "Remote",
-      posted: "1 day ago",
-      proposals: 15
+  const formatBudget = (min: number | null, max: number | null) => {
+    if (min && max) {
+      return `$${min} - $${max}`;
+    } else if (min) {
+      return `$${min}+`;
+    } else if (max) {
+      return `Up to $${max}`;
     }
-  ];
+    return "Budget not specified";
+  };
 
-  const topFreelancers = [
-    {
-      id: 1,
-      name: "Sarah Chen",
-      title: "Full-Stack Developer",
-      rating: 4.9,
-      completedJobs: 47,
-      skills: ["React", "Python", "AWS"],
-      hourlyRate: "$85/hr",
-      image: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face"
-    },
-    {
-      id: 2,
-      name: "Marcus Johnson",
-      title: "UI/UX Designer",
-      rating: 4.8,
-      completedJobs: 32,
-      skills: ["Figma", "Adobe XD", "Prototyping"],
-      hourlyRate: "$75/hr",
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
-    },
-    {
-      id: 3,
-      name: "Emily Rodriguez",
-      title: "Content Strategist",
-      rating: 4.9,
-      completedJobs: 28,
-      skills: ["Content Writing", "SEO", "Marketing"],
-      hourlyRate: "$60/hr",
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face"
-    }
-  ];
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return "Just now";
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays === 1) return "1 day ago";
+    return `${diffInDays} days ago`;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -229,7 +253,7 @@ const Index = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                {featuredJobs.map((job) => (
+                {featuredJobs.length > 0 ? featuredJobs.map((job) => (
                   <Card key={job.id} className="hover:shadow-lg transition-shadow duration-300 border-0 shadow-md">
                     <CardHeader>
                       <div className="flex justify-between items-start mb-2">
@@ -237,7 +261,7 @@ const Index = () => {
                           {job.title}
                         </CardTitle>
                         <Badge variant="secondary" className="text-xs">
-                          {job.posted}
+                          {formatTimeAgo(job.created_at)}
                         </Badge>
                       </div>
                       <CardDescription className="text-sm text-gray-600 line-clamp-3">
@@ -248,32 +272,36 @@ const Index = () => {
                       <div className="space-y-3">
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <DollarSign className="h-4 w-4" />
-                          <span className="font-medium">{job.budget}</span>
+                          <span className="font-medium">{formatBudget(job.budget_min, job.budget_max)}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Clock className="h-4 w-4" />
-                          <span>{job.duration}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <MapPin className="h-4 w-4" />
-                          <span>{job.location}</span>
-                        </div>
+                        {job.duration && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Clock className="h-4 w-4" />
+                            <span>{job.duration}</span>
+                          </div>
+                        )}
+                        {job.location && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <MapPin className="h-4 w-4" />
+                            <span>{job.location}</span>
+                          </div>
+                        )}
                         <div className="flex flex-wrap gap-1">
-                          {job.skills.slice(0, 3).map((skill) => (
+                          {job.skills_required?.slice(0, 3).map((skill) => (
                             <Badge key={skill} variant="outline" className="text-xs">
                               {skill}
                             </Badge>
                           ))}
-                          {job.skills.length > 3 && (
+                          {job.skills_required && job.skills_required.length > 3 && (
                             <Badge variant="outline" className="text-xs">
-                              +{job.skills.length - 3}
+                              +{job.skills_required.length - 3}
                             </Badge>
                           )}
                         </div>
                       </div>
                     </CardContent>
                     <CardFooter className="flex justify-between items-center">
-                      <span className="text-sm text-gray-500">{job.proposals} proposals</span>
+                      <span className="text-sm text-gray-500">{job.proposals_count || 0} proposals</span>
                       <Button 
                         className="bg-blue-600 hover:bg-blue-700"
                         onClick={() => navigate('/find-jobs')}
@@ -282,7 +310,17 @@ const Index = () => {
                       </Button>
                     </CardFooter>
                   </Card>
-                ))}
+                )) : (
+                  <div className="col-span-full text-center py-12">
+                    <p className="text-gray-500">No featured jobs available at the moment.</p>
+                    <Button 
+                      className="mt-4 bg-blue-600 hover:bg-blue-700"
+                      onClick={() => navigate('/post-job')}
+                    >
+                      Post the First Job
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="text-center">
@@ -306,39 +344,52 @@ const Index = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                {topFreelancers.map((freelancer) => (
+                {topFreelancers.length > 0 ? topFreelancers.map((freelancer) => (
                   <Card key={freelancer.id} className="hover:shadow-lg transition-shadow duration-300 border-0 shadow-md">
                     <CardHeader className="text-center">
-                      <div className="w-20 h-20 rounded-full mx-auto mb-4 overflow-hidden">
-                        <img
-                          src={freelancer.image}
-                          alt={freelancer.name}
-                          className="w-full h-full object-cover"
-                        />
+                      <div className="w-20 h-20 rounded-full mx-auto mb-4 overflow-hidden bg-gray-200">
+                        {freelancer.avatar_url ? (
+                          <img
+                            src={freelancer.avatar_url}
+                            alt={freelancer.full_name || 'Freelancer'}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-500">
+                            <Users className="h-8 w-8" />
+                          </div>
+                        )}
                       </div>
                       <CardTitle className="text-lg font-semibold text-gray-900">
-                        {freelancer.name}
+                        {freelancer.full_name || 'Anonymous User'}
                       </CardTitle>
                       <CardDescription className="text-blue-600 font-medium">
-                        {freelancer.title}
+                        {freelancer.bio?.split('.')[0] || 'Freelancer'}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
                         <div className="flex items-center justify-center gap-2">
                           <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                          <span className="font-medium">{freelancer.rating}</span>
-                          <span className="text-gray-500 text-sm">({freelancer.completedJobs} jobs)</span>
+                          <span className="font-medium">New</span>
+                          <span className="text-gray-500 text-sm">(0 jobs)</span>
                         </div>
                         <div className="text-center">
-                          <span className="text-lg font-bold text-gray-900">{freelancer.hourlyRate}</span>
+                          <span className="text-lg font-bold text-gray-900">
+                            ${freelancer.hourly_rate || 0}/hr
+                          </span>
                         </div>
                         <div className="flex flex-wrap justify-center gap-1">
-                          {freelancer.skills.map((skill) => (
+                          {freelancer.skills?.slice(0, 3).map((skill) => (
                             <Badge key={skill} variant="outline" className="text-xs">
                               {skill}
                             </Badge>
                           ))}
+                          {freelancer.skills && freelancer.skills.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{freelancer.skills.length - 3}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -347,14 +398,24 @@ const Index = () => {
                         className="w-full bg-blue-600 hover:bg-blue-700"
                         onClick={() => toast({
                           title: "Profile View",
-                          description: `Viewing ${freelancer.name}'s profile`,
+                          description: `Viewing ${freelancer.full_name || 'freelancer'}'s profile`,
                         })}
                       >
                         View Profile
                       </Button>
                     </CardFooter>
                   </Card>
-                ))}
+                )) : (
+                  <div className="col-span-full text-center py-12">
+                    <p className="text-gray-500">No freelancers available at the moment.</p>
+                    <Button 
+                      className="mt-4 bg-blue-600 hover:bg-blue-700"
+                      onClick={() => navigate('/auth')}
+                    >
+                      Join as a Freelancer
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="text-center">
