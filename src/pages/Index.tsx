@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,9 +5,81 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, MapPin, Clock, DollarSign, Users, Briefcase, Star } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      toast({
+        title: "Search initiated",
+        description: `Searching for: ${searchQuery}`,
+      });
+    } else {
+      toast({
+        title: "Please enter a search term",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleApplyJob = (jobTitle: string) => {
+    toast({
+      title: "Application Started",
+      description: `Applying for: ${jobTitle}`,
+    });
+  };
+
+  const handleViewProfile = (freelancerName: string) => {
+    toast({
+      title: "Profile View",
+      description: `Viewing ${freelancerName}'s profile`,
+    });
+  };
+
+  const handleSignIn = () => {
+    toast({
+      title: "Sign In",
+      description: "Redirecting to sign in page...",
+    });
+  };
+
+  const handleGetStarted = () => {
+    toast({
+      title: "Get Started",
+      description: "Welcome to FreelanceHub!",
+    });
+  };
+
+  const handlePostJob = () => {
+    toast({
+      title: "Post a Job",
+      description: "Redirecting to job posting form...",
+    });
+  };
+
+  const handleStartFreelancing = () => {
+    toast({
+      title: "Start Freelancing",
+      description: "Setting up your freelancer profile...",
+    });
+  };
+
+  const handleViewAllJobs = () => {
+    toast({
+      title: "All Jobs",
+      description: "Loading all available jobs...",
+    });
+  };
+
+  const handleBrowseFreelancers = () => {
+    toast({
+      title: "Browse Freelancers",
+      description: "Loading freelancer directory...",
+    });
+  };
 
   // Mock data for demonstration
   const featuredJobs = [
@@ -97,8 +168,8 @@ const Index = () => {
               <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Find Work</a>
               <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Find Talent</a>
               <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">How it Works</a>
-              <Button variant="outline" className="ml-4">Sign In</Button>
-              <Button className="bg-blue-600 hover:bg-blue-700">Get Started</Button>
+              <Button variant="outline" className="ml-4" onClick={handleSignIn}>Sign In</Button>
+              <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleGetStarted}>Get Started</Button>
             </div>
           </div>
         </div>
@@ -125,9 +196,13 @@ const Index = () => {
                 placeholder="Search for any service..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 className="pl-12 pr-4 py-4 text-lg rounded-full border-2 border-gray-200 focus:border-blue-500"
               />
-              <Button className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full bg-blue-600 hover:bg-blue-700">
+              <Button 
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full bg-blue-600 hover:bg-blue-700"
+                onClick={handleSearch}
+              >
                 Search
               </Button>
             </div>
@@ -220,7 +295,10 @@ const Index = () => {
                     </CardContent>
                     <CardFooter className="flex justify-between items-center">
                       <span className="text-sm text-gray-500">{job.proposals} proposals</span>
-                      <Button className="bg-blue-600 hover:bg-blue-700">
+                      <Button 
+                        className="bg-blue-600 hover:bg-blue-700"
+                        onClick={() => handleApplyJob(job.title)}
+                      >
                         Apply Now
                       </Button>
                     </CardFooter>
@@ -229,7 +307,12 @@ const Index = () => {
               </div>
 
               <div className="text-center">
-                <Button variant="outline" size="lg" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                  onClick={handleViewAllJobs}
+                >
                   View All Jobs
                 </Button>
               </div>
@@ -281,7 +364,10 @@ const Index = () => {
                       </div>
                     </CardContent>
                     <CardFooter>
-                      <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                      <Button 
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                        onClick={() => handleViewProfile(freelancer.name)}
+                      >
                         View Profile
                       </Button>
                     </CardFooter>
@@ -290,7 +376,12 @@ const Index = () => {
               </div>
 
               <div className="text-center">
-                <Button variant="outline" size="lg" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                  onClick={handleBrowseFreelancers}
+                >
                   Browse All Freelancers
                 </Button>
               </div>
@@ -309,10 +400,19 @@ const Index = () => {
             Join thousands of businesses and freelancers who trust FreelanceHub
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 text-lg">
+            <Button 
+              size="lg" 
+              className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 text-lg"
+              onClick={handlePostJob}
+            >
               Post a Job
             </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 text-lg">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 text-lg"
+              onClick={handleStartFreelancing}
+            >
               Start Freelancing
             </Button>
           </div>
