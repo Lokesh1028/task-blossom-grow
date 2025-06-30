@@ -448,7 +448,7 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 text-lg"
+              className="bg-white text-blue-600 hover:bg-gray-100 hover:text-blue-700 px-8 py-3 text-lg"
               onClick={() => navigate('/post-job')}
             >
               Post a Job
@@ -456,7 +456,7 @@ const Index = () => {
             <Button 
               size="lg" 
               variant="outline" 
-              className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 text-lg"
+              className="border-2 border-white text-white bg-transparent hover:bg-white hover:text-blue-600 px-8 py-3 text-lg transition-colors"
               onClick={() => navigate('/find-jobs')}
             >
               Start Freelancing
